@@ -40,7 +40,7 @@ export default function AddMachinePage() {
     });
     setSaving(false);
     if (dbError) {
-      setError("Ocurrió un error al guardar. Probá de nuevo.");
+      setError("Error: " + (dbError.message || JSON.stringify(dbError)));
       return;
     }
     router.push("/machinery");
