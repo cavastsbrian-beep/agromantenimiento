@@ -79,9 +79,7 @@ export default function AddMachinePage() {
           <Field label="Número de serie">
             <input className={inputCls} value={form.numero_serie} onChange={set("numero_serie")} />
           </Field>
-          <Field label="Horas actuales">
-            <input type="number" className={inputCls} value={form.horas} onChange={set("horas")} />
-          </Field>
+          
         </div>
 
         <Field label="Observaciones">
