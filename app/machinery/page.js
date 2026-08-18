@@ -90,9 +90,15 @@ export default function MachineryPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((m) => (
             <div key={m.id} className="rounded-xl bg-white p-4 shadow-sm">
-              <div className="mb-3 flex h-28 items-center justify-center rounded-lg bg-[#F1F3F5]">
-                <Tractor size={30} className="text-gray-400" />
-              </div>
+              <div className="mb-3 h-28 overflow-hidden rounded-lg bg-[#F1F3F5]">
+  {m.foto_url ? (
+    <img src={m.foto_url} alt={`${m.marca} ${m.modelo}`} className="h-full w-full object-cover" />
+  ) : (
+    <div className="flex h-full items-center justify-center">
+      <Tractor size={30} className="text-gray-400" />
+    </div>
+  )}
+</div>
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-semibold">{m.marca} {m.modelo}</div>
