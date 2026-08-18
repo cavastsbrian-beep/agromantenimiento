@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Tractor, Search, Filter, Gauge, ChevronRight, X } from "lucide-react";
+import { Tractor, Search, Filter, ClipboardList, ChevronRight, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function MachineryPage() {
@@ -103,7 +103,7 @@ export default function MachineryPage() {
                 </span>
               </div>
               <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
-                <Gauge size={13} /> {m.horas} hs · {m.mantenimientos?.[0]?.count || 0} mantenimientos
+                <ClipboardList size={13} /> {m.mantenimientos?.[0]?.count || 0} mantenimientos
               </div>
               <div className="mt-4 flex gap-2">
                 <Link
