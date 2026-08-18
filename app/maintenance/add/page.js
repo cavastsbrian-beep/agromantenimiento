@@ -134,9 +134,7 @@ export default function AddMaintenancePage() {
               <option>Correctivo</option>
             </select>
           </Field>
-          <Field label="Horas de trabajo">
-            <input type="number" className={inputCls} value={form.horas} onChange={set("horas")} />
-          </Field>
+          
         </div>
 
         <Field label="Descripción">
