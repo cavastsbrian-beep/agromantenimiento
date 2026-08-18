@@ -82,7 +82,6 @@ export default function MachineDetailPage() {
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
             <Info label="Cliente" value={machine.cliente} icon={User} />
             <Info label="N° de serie" value={machine.numero_serie || "—"} icon={ClipboardList} />
-            <Info label="Horas actuales" value={`${machine.horas} hs`} icon={Gauge} />
           </div>
           {machine.observaciones && (
             <p className="mt-3 text-sm text-gray-500">{machine.observaciones}</p>
