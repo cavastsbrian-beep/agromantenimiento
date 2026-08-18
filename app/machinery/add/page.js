@@ -1,25 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Check } from "lucide-react";
+import { Check, Camera, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 const empty = {
   cliente: "", tipo: "", marca: "", modelo: "", anio: "",
-  numero_serie: "", horas: "", observaciones: "",
+  numero_serie: "", observaciones: "",
 };
 
 export default function AddMachinePage() {
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const fileInputRef = useRef(null);
   const router = useRouter();
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   const inputCls =
     "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#157347] focus:ring-2 focus:ring-[#157347]/20";
+
+  const handleFile = (fileList) => {
+    const f = fileList?.[0];
+    if (!f) return;
+    if (!f.type.startsWith("image/")) {
+      setError("Solo se aceptan archivos de imagen (JPG, PNG, etc.).");
+      return;
+    }
+    setError("");
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setPreview(null);
+  };
 
   const handleSave = async () => {
     setError("");
@@ -28,6 +48,22 @@ export default function AddMachinePage() {
       return;
     }
     setSaving(true);
+
+    let fotoUrl = null;
+    if (file) {
+      const path = `${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("fotos-maquinaria")
+        .upload(path, file);
+      if (uploadError) {
+        setSaving(false);
+        setError("No se pudo subir la foto. Probá de nuevo.");
+        return;
+      }
+      const { data: pub } = supabase.storage.from("fotos-maquinaria").getPublicUrl(path);
+      fotoUrl = pub.publicUrl;
+    }
+
     const { error: dbError } = await supabase.from("maquinas").insert({
       cliente: form.cliente,
       tipo: form.tipo,
@@ -35,12 +71,12 @@ export default function AddMachinePage() {
       modelo: form.modelo,
       anio: form.anio ? Number(form.anio) : null,
       numero_serie: form.numero_serie,
-      horas: form.horas ? Number(form.horas) : 0,
       observaciones: form.observaciones,
+      foto_url: fotoUrl,
     });
     setSaving(false);
     if (dbError) {
-      setError("Error: " + (dbError.message || JSON.stringify(dbError)));
+      setError("Ocurrió un error al guardar. Probá de nuevo.");
       return;
     }
     router.push("/machinery");
@@ -79,8 +115,40 @@ export default function AddMachinePage() {
           <Field label="Número de serie">
             <input className={inputCls} value={form.numero_serie} onChange={set("numero_serie")} />
           </Field>
-          
         </div>
+
+        <Field label="Fotografía">
+          {preview ? (
+            <div className="relative">
+              <img src={preview} alt="Vista previa" className="h-40 w-full rounded-lg object-cover" />
+              <button
+                type="button"
+                onClick={removeFile}
+                className="absolute right-2 top-2 rounded-full bg-white p-1.5 shadow hover:bg-gray-50"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="relative rounded-lg border border-dashed border-gray-300 px-4 py-6 transition hover:border-[#157347] hover:bg-green-50/40">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full items-center gap-3 text-sm text-gray-500"
+              >
+                <Camera size={18} />
+                Hacé clic para seleccionar una foto
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden" }}
+                onChange={(e) => handleFile(e.target.files)}
+              />
+            </div>
+          )}
+        </Field>
 
         <Field label="Observaciones">
           <textarea rows={3} className={inputCls} value={form.observaciones} onChange={set("observaciones")} />
