@@ -53,14 +53,14 @@ export default function AddMachinePage() {
     if (file) {
       const path = `${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
-        .from("fotos-maquinaria")
+        .from("Fotos-maquinaria")
         .upload(path, file);
       if (uploadError) {
         setSaving(false);
         setError("Error real: " + uploadError.message + "");
         return;
       }
-      const { data: pub } = supabase.storage.from("fotos-maquinaria").getPublicUrl(path);
+      const { data: pub } = supabase.storage.from("Fotos-maquinaria").getPublicUrl(path);
       fotoUrl = pub.publicUrl;
     }
 
