@@ -57,7 +57,7 @@ export default function AddMachinePage() {
         .upload(path, file);
       if (uploadError) {
         setSaving(false);
-        setError("No se pudo subir la foto. Probá de nuevo.");
+        setError("Error real: " + uploadError.message + "");
         return;
       }
       const { data: pub } = supabase.storage.from("fotos-maquinaria").getPublicUrl(path);
