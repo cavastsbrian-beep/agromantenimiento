@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Tractor, ArrowLeft, QrCode, User, ClipboardList, Gauge,
-  Calendar, FileSpreadsheet, Download, Plus, X, Save, Clock, ChevronDown,
+  Calendar, FileSpreadsheet, Download, ChevronRight, Clock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -16,10 +16,6 @@ export default function MachineDetailPage() {
   const [loading, setLoading] = useState(true);
   const [siteUrl, setSiteUrl] = useState("");
   const [seguimientos, setSeguimientos] = useState({});
-  const [openForm, setOpenForm] = useState(null);
-  const [formData, setFormData] = useState({ operario: "", horas: "", fecha: "" });
-  const [saving, setSaving] = useState(false);
-  const [openHistorial, setOpenHistorial] = useState({});
 
   useEffect(() => {
     if (typeof window !== "undefined") setSiteUrl(window.location.href);
@@ -41,8 +37,7 @@ export default function MachineDetailPage() {
         const { data: s } = await supabase
           .from("seguimientos")
           .select("*")
-          .in("mantenimiento_id", ids)
-          .order("fecha", { ascending: false });
+          .in("mantenimiento_id", ids);
         const grouped = {};
         (s || []).forEach((item) => {
           if (!grouped[item.mantenimiento_id]) grouped[item.mantenimiento_id] = [];
@@ -59,42 +54,6 @@ export default function MachineDetailPage() {
   const totalHoras = (mantenimientoId) => {
     const list = seguimientos[mantenimientoId] || [];
     return list.reduce((sum, item) => sum + (Number(item.horas) || 0), 0);
-  };
-
-  const openSeguimientoForm = (mantenimientoId) => {
-    setOpenForm(mantenimientoId);
-    setFormData({ operario: "", horas: "", fecha: new Date().toISOString().slice(0, 10) });
-  };
-
-  const closeSeguimientoForm = () => {
-    setOpenForm(null);
-    setFormData({ operario: "", horas: "", fecha: "" });
-  };
-
-  const submitSeguimiento = async (mantenimientoId) => {
-    if (!formData.operario || !formData.horas || !formData.fecha) return;
-    setSaving(true);
-    const { data, error } = await supabase
-      .from("seguimientos")
-      .insert({
-        mantenimiento_id: mantenimientoId,
-        operario: formData.operario,
-        horas: Number(formData.horas),
-        fecha: formData.fecha,
-      })
-      .select()
-      .single();
-    setSaving(false);
-    if (error) {
-      alert("No se pudo guardar el seguimiento: " + error.message);
-      return;
-    }
-    setSeguimientos((prev) => {
-      const current = prev[mantenimientoId] || [];
-      return { ...prev, [mantenimientoId]: [data, ...current] };
-    });
-    setOpenHistorial((prev) => ({ ...prev, [mantenimientoId]: true }));
-    closeSeguimientoForm();
   };
 
   if (loading) {
@@ -220,79 +179,12 @@ export default function MachineDetailPage() {
                   </>
                 )}
                 <button
-                  onClick={() => (openForm === t.id ? closeSeguimientoForm() : openSeguimientoForm(t.id))}
+                  onClick={() => router.push(`/m/${id}/seguimiento/${t.id}`)}
                   className="flex items-center gap-1.5 rounded-lg border border-[#157347] px-3 py-1.5 text-xs font-medium text-[#157347] hover:bg-green-50"
                 >
-                  {openForm === t.id ? <X size={13} /> : <Plus size={13} />} Seguimiento
+                  <ChevronRight size={13} /> Seguimiento
                 </button>
               </div>
-
-              {openForm === t.id && (
-                <div className="mt-4 rounded-lg border border-gray-200 bg-[#F8F9FA] p-4">
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-600">Operario</label>
-                      <input
-                        type="text"
-                        value={formData.operario}
-                        onChange={(e) => setFormData({ ...formData, operario: e.target.value })}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#157347]"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-600">Horas de trabajo</label>
-                      <input
-                        type="number"
-                        value={formData.horas}
-                        onChange={(e) => setFormData({ ...formData, horas: e.target.value })}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#157347]"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-600">Fecha</label>
-                      <input
-                        type="date"
-                        value={formData.fecha}
-                        onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#157347]"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => submitSeguimiento(t.id)}
-                    disabled={saving}
-                    className="mt-3 flex items-center gap-1.5 rounded-lg bg-[#157347] px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                  >
-                    <Save size={13} /> {saving ? "Guardando..." : "Guardar seguimiento"}
-                  </button>
-                </div>
-              )}
-
-              {(seguimientos[t.id] || []).length > 0 && (
-                <div className="mt-4 border-t border-gray-100 pt-3">
-                  <button
-                    onClick={() => setOpenHistorial((prev) => ({ ...prev, [t.id]: !prev[t.id] }))}
-                    className="flex items-center gap-1 text-xs font-semibold uppercase text-[#157347] hover:underline"
-                  >
-                    <ChevronDown
-                      size={13}
-                      style={{ transform: openHistorial[t.id] ? "rotate(180deg)" : "rotate(0deg)" }}
-                    />
-                    Historial de seguimiento
-                  </button>
-                  {openHistorial[t.id] && (
-                    <div className="mt-2 space-y-1.5">
-                      {seguimientos[t.id].map((s) => (
-                        <div key={s.id} className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                          <span className="flex items-center gap-1"><Calendar size={11} /> {s.fecha}</span>
-                          <span className="flex items-center gap-1"><User size={11} /> {s.operario}</span>
-                          <span className="flex items-center gap-1"><Gauge size={11} /> {s.horas} hs</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           ))}
         </div>
