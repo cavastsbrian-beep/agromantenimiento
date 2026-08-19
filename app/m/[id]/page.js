@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Tractor, ArrowLeft, QrCode, User, ClipboardList, Gauge,
-  Calendar, FileSpreadsheet, Download, Plus, X, Save, Clock,
+  Calendar, FileSpreadsheet, Download, Plus, X, Save, Clock, ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -19,6 +19,7 @@ export default function MachineDetailPage() {
   const [openForm, setOpenForm] = useState(null);
   const [formData, setFormData] = useState({ operario: "", horas: "", fecha: "" });
   const [saving, setSaving] = useState(false);
+  const [openHistorial, setOpenHistorial] = useState({});
 
   useEffect(() => {
     if (typeof window !== "undefined") setSiteUrl(window.location.href);
@@ -92,6 +93,7 @@ export default function MachineDetailPage() {
       const current = prev[mantenimientoId] || [];
       return { ...prev, [mantenimientoId]: [data, ...current] };
     });
+    setOpenHistorial((prev) => ({ ...prev, [mantenimientoId]: true }));
     closeSeguimientoForm();
   };
 
@@ -268,16 +270,27 @@ export default function MachineDetailPage() {
 
               {(seguimientos[t.id] || []).length > 0 && (
                 <div className="mt-4 border-t border-gray-100 pt-3">
-                  <p className="mb-2 text-xs font-semibold uppercase text-gray-400">Historial</p>
-                  <div className="space-y-1.5">
-                    {seguimientos[t.id].map((s) => (
-                      <div key={s.id} className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                        <span className="flex items-center gap-1"><Calendar size={11} /> {s.fecha}</span>
-                        <span className="flex items-center gap-1"><User size={11} /> {s.operario}</span>
-                        <span className="flex items-center gap-1"><Gauge size={11} /> {s.horas} hs</span>
-                      </div>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => setOpenHistorial((prev) => ({ ...prev, [t.id]: !prev[t.id] }))}
+                    className="flex items-center gap-1 text-xs font-semibold uppercase text-[#157347] hover:underline"
+                  >
+                    <ChevronDown
+                      size={13}
+                      style={{ transform: openHistorial[t.id] ? "rotate(180deg)" : "rotate(0deg)" }}
+                    />
+                    Historial de seguimiento
+                  </button>
+                  {openHistorial[t.id] && (
+                    <div className="mt-2 space-y-1.5">
+                      {seguimientos[t.id].map((s) => (
+                        <div key={s.id} className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                          <span className="flex items-center gap-1"><Calendar size={11} /> {s.fecha}</span>
+                          <span className="flex items-center gap-1"><User size={11} /> {s.operario}</span>
+                          <span className="flex items-center gap-1"><Gauge size={11} /> {s.horas} hs</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
