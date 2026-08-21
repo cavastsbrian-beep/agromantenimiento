@@ -13,7 +13,6 @@ export default function HomeContent() {
       .from("maquinas")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(3)
       .then(({ data }) => setMachines(data || []));
   }, []);
 
@@ -41,7 +40,7 @@ export default function HomeContent() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-14">
-        <h2 className="text-lg font-bold">Últimas máquinas registradas</h2>
+        <h2 className="text-lg font-bold">Máquinas registradas</h2>
         {machines.length === 0 ? (
           <p className="mt-4 text-sm text-gray-500">Todavía no hay máquinas registradas.</p>
         ) : (
