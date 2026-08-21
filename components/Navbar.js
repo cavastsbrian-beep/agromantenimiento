@@ -8,7 +8,6 @@ import { Tractor, LogIn, LogOut, Menu, Lock } from "lucide-react";
 const ITEMS = [
   { href: "/", label: "Inicio" },
   { href: "/machinery/add", label: "Agregar maquinaria" },
-  { href: "/machinery", label: "Máquinas registradas" },
   { href: "/maintenance/add", label: "Agregar mantenimiento" },
   { href: "/settings", label: "Configuración" },
 ];
