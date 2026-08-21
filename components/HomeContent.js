@@ -36,20 +36,7 @@ export default function HomeContent() {
             Registrá, organizá y consultá el historial de mantenimiento de cada máquina
             desde un solo lugar — con acceso directo por enlace o código QR.
           </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/machinery"
-              className="flex items-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-semibold text-[#157347] shadow-lg transition hover:-translate-y-0.5"
-            >
-              <ClipboardList size={17} /> Ver máquinas registradas
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 rounded-lg border border-white/40 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              <LogOut size={17} /> Cerrar sesión
-            </button>
-          </div>
+          
         </div>
       </section>
 
