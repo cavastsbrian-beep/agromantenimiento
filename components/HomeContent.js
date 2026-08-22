@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Tractor, ClipboardList, Gauge, LogOut } from "lucide-react";
+import { Tractor, ClipboardList, Gauge, LogOut, Search } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function HomeContent() {
   const [machines, setMachines] = useState([]);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     supabase
@@ -20,6 +21,16 @@ export default function HomeContent() {
     await fetch("/api/logout", { method: "POST" });
     window.location.reload();
   };
+
+  const filtered = machines.filter((m) => {
+    const q = search.toLowerCase();
+    return (
+      m.marca?.toLowerCase().includes(q) ||
+      m.modelo?.toLowerCase().includes(q) ||
+      m.cliente?.toLowerCase().includes(q) ||
+      m.tipo?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <main>
@@ -35,17 +46,30 @@ export default function HomeContent() {
             Registrá, organizá y consultá el historial de mantenimiento de cada máquina
             desde un solo lugar — con acceso directo por enlace o código QR.
           </p>
-          
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-14">
         <h2 className="text-lg font-bold">Máquinas registradas</h2>
+
+        <div className="relative mt-4">
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por marca, modelo o cliente..."
+            className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#157347]"
+          />
+        </div>
+
         {machines.length === 0 ? (
           <p className="mt-4 text-sm text-gray-500">Todavía no hay máquinas registradas.</p>
+        ) : filtered.length === 0 ? (
+          <p className="mt-4 text-sm text-gray-500">No se encontraron máquinas con esa búsqueda.</p>
         ) : (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {machines.map((m) => (
+            {filtered.map((m) => (
               <Link
                 key={m.id}
                 href={`/m/${m.id}`}
