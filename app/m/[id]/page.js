@@ -162,7 +162,7 @@ export default function MachineDetailPage() {
                 {t.excel_url && (
                   <>
                     <a
-                      href={t.excel_url}
+                      href={`https://docs.google.com/viewer?url=${encodeURIComponent(t.excel_url)}&embedded=true`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
