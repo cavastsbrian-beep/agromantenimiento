@@ -2,25 +2,26 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Tractor, ClipboardList, Gauge, LogOut, Search } from "lucide-react";
+import { Tractor, Gauge, Search, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function HomeContent() {
   const [machines, setMachines] = useState([]);
   const [search, setSearch] = useState("");
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
+  const loadMachines = () => {
     supabase
       .from("maquinas")
       .select("*")
       .order("created_at", { ascending: false })
       .then(({ data }) => setMachines(data || []));
-  }, []);
-
-  const handleLogout = async () => {
-    await fetch("/api/logout", { method: "POST" });
-    window.location.reload();
   };
+
+  useEffect(() => {
+    loadMachines();
+  }, []);
 
   const filtered = machines.filter((m) => {
     const q = search.toLowerCase();
@@ -31,6 +32,19 @@ export default function HomeContent() {
       m.tipo?.toLowerCase().includes(q)
     );
   });
+
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    const { error } = await supabase.from("maquinas").delete().eq("id", toDelete.id);
+    setDeleting(false);
+    if (error) {
+      alert("No se pudo eliminar: " + error.message);
+      return;
+    }
+    setMachines((prev) => prev.filter((m) => m.id !== toDelete.id));
+    setToDelete(null);
+  };
 
   return (
     <main>
@@ -70,30 +84,64 @@ export default function HomeContent() {
         ) : (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((m) => (
-              <Link
-                key={m.id}
-                href={`/m/${m.id}`}
-                className="rounded-xl bg-white p-4 text-left shadow-sm transition hover:shadow-md"
-              >
-                <div className="mb-3 h-28 overflow-hidden rounded-lg bg-[#F1F3F5]">
-                  {m.foto_url ? (
-                    <img src={m.foto_url} alt={`${m.marca} ${m.modelo}`} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <Tractor size={30} className="text-gray-400" />
-                    </div>
-                  )}
-                </div>
-                <div className="font-semibold">{m.marca} {m.modelo}</div>
-                <div className="text-sm text-gray-500">{m.cliente}</div>
-                <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
-                  <Gauge size={13} /> {m.horas} hs
-                </div>
-              </Link>
+              <div key={m.id} className="relative rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setToDelete(m);
+                  }}
+                  className="absolute right-2.5 top-2.5 z-10 rounded-full bg-white/95 p-1.5 text-gray-400 shadow hover:bg-red-50 hover:text-red-600"
+                >
+                  <Trash2 size={15} />
+                </button>
+                <Link href={`/m/${m.id}`} className="block text-left">
+                  <div className="mb-3 h-28 overflow-hidden rounded-lg bg-[#F1F3F5]">
+                    {m.foto_url ? (
+                      <img src={m.foto_url} alt={`${m.marca} ${m.modelo}`} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <Tractor size={30} className="text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="font-semibold">{m.marca} {m.modelo}</div>
+                  <div className="text-sm text-gray-500">{m.cliente}</div>
+                  <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
+                    <Gauge size={13} /> {m.horas} hs
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
         )}
       </section>
+
+      {toDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg">
+            <h3 className="mb-2 text-base font-bold text-gray-900">¿Eliminar esta máquina?</h3>
+            <p className="mb-4 text-sm text-gray-500">
+              Vas a eliminar <span className="font-medium text-gray-800">{toDelete.marca} {toDelete.modelo}</span> ({toDelete.cliente}).
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setToDelete(null)}
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {deleting ? "Eliminando..." : "Sí, eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
