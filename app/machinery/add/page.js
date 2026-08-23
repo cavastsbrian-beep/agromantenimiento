@@ -6,7 +6,7 @@ import { Check, Camera, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 const empty = {
-  cliente: "", tipo: "", marca: "", modelo: "", anio: "",
+  cliente: "", tipo: "", tipoOtro: "", marca: "", modelo: "", anio: "",
   numero_serie: "", observaciones: "",
 };
 
@@ -43,21 +43,26 @@ export default function AddMachinePage() {
 
   const handleSave = async () => {
     setError("");
-    if (!form.cliente || !form.marca || !form.modelo || !form.tipo) {
+
+    const tipoFinal = form.tipo === "Otro" ? form.tipoOtro.trim() : form.tipo;
+
+    if (!form.cliente || !form.marca || !form.modelo || !form.tipo || (form.tipo === "Otro" && !tipoFinal)) {
       setError("Completá los campos obligatorios.");
       return;
     }
-    setSaving(true);
 
+    setSaving(true);
     let fotoUrl = null;
+
     if (file) {
       const path = `${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("Fotos-maquinaria")
         .upload(path, file);
+
       if (uploadError) {
         setSaving(false);
-        setError("Error real: " + uploadError.message + "");
+        setError("No se pudo subir la foto. Probá de nuevo.");
         return;
       }
       const { data: pub } = supabase.storage.from("Fotos-maquinaria").getPublicUrl(path);
@@ -66,7 +71,7 @@ export default function AddMachinePage() {
 
     const { error: dbError } = await supabase.from("maquinas").insert({
       cliente: form.cliente,
-      tipo: form.tipo,
+      tipo: tipoFinal,
       marca: form.marca,
       modelo: form.modelo,
       anio: form.anio ? Number(form.anio) : null,
@@ -74,6 +79,7 @@ export default function AddMachinePage() {
       observaciones: form.observaciones,
       foto_url: fotoUrl,
     });
+
     setSaving(false);
     if (dbError) {
       setError("Ocurrió un error al guardar. Probá de nuevo.");
@@ -93,6 +99,7 @@ export default function AddMachinePage() {
           <Field label="Cliente propietario" required>
             <input className={inputCls} value={form.cliente} onChange={set("cliente")} />
           </Field>
+
           <Field label="Tipo de maquinaria" required>
             <select className={inputCls} value={form.tipo} onChange={set("tipo")}>
               <option value="">Seleccionar...</option>
@@ -103,15 +110,30 @@ export default function AddMachinePage() {
               <option>Otro</option>
             </select>
           </Field>
+
+          {form.tipo === "Otro" && (
+            <Field label="Especificá el tipo de maquinaria" required>
+              <input
+                className={inputCls}
+                value={form.tipoOtro}
+                onChange={set("tipoOtro")}
+                placeholder="Ej: Rastra, Fumigadora autopropulsada..."
+              />
+            </Field>
+          )}
+
           <Field label="Marca" required>
             <input className={inputCls} value={form.marca} onChange={set("marca")} />
           </Field>
+
           <Field label="Modelo" required>
             <input className={inputCls} value={form.modelo} onChange={set("modelo")} />
           </Field>
+
           <Field label="Año">
             <input type="number" className={inputCls} value={form.anio} onChange={set("anio")} />
           </Field>
+
           <Field label="Número de serie">
             <input className={inputCls} value={form.numero_serie} onChange={set("numero_serie")} />
           </Field>
