@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Tractor, ArrowLeft, QrCode, User, ClipboardList, Gauge,
-  Calendar, FileSpreadsheet, Download, ChevronRight, Clock, Trash2,
+  Calendar, FileSpreadsheet, Download, ChevronRight, Clock, Pencil, Trash2, Save, X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -15,7 +15,10 @@ export default function MachineDetailClient({ id, isAdmin }) {
   const [loading, setLoading] = useState(true);
   const [siteUrl, setSiteUrl] = useState("");
   const [seguimientos, setSeguimientos] = useState({});
-  const [toDelete, setToDelete] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -58,17 +61,51 @@ export default function MachineDetailClient({ id, isAdmin }) {
     return list.reduce((sum, item) => sum + (Number(item.horas) || 0), 0);
   };
 
+  const openEdit = (t) => {
+    setEditing(t);
+    setEditForm({
+      tipo: t.tipo || "",
+      fecha: t.fecha || "",
+      responsable: t.responsable || "",
+      descripcion: t.descripcion || "",
+      repuestos: t.repuestos || "",
+      observaciones: t.observaciones || "",
+    });
+    setConfirmingDelete(false);
+  };
+
+  const closeEdit = () => {
+    setEditing(null);
+    setConfirmingDelete(false);
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("mantenimientos")
+      .update(editForm)
+      .eq("id", editing.id);
+    setSaving(false);
+    if (error) {
+      alert("No se pudo guardar: " + error.message);
+      return;
+    }
+    setRecords((prev) => prev.map((r) => (r.id === editing.id ? { ...r, ...editForm } : r)));
+    closeEdit();
+  };
+
   const confirmDelete = async () => {
-    if (!toDelete) return;
+    if (!editing) return;
     setDeleting(true);
-    const { error } = await supabase.from("mantenimientos").delete().eq("id", toDelete.id);
+    const { error } = await supabase.from("mantenimientos").delete().eq("id", editing.id);
     setDeleting(false);
     if (error) {
       alert("No se pudo eliminar: " + error.message);
       return;
     }
-    setRecords((prev) => prev.filter((r) => r.id !== toDelete.id));
-    setToDelete(null);
+    setRecords((prev) => prev.filter((r) => r.id !== editing.id));
+    closeEdit();
   };
 
   if (loading) {
@@ -87,6 +124,9 @@ export default function MachineDetailClient({ id, isAdmin }) {
     ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(siteUrl)}`
     : null;
 
+  const inputCls =
+    "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#157347]";
+
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <button
@@ -99,7 +139,7 @@ export default function MachineDetailClient({ id, isAdmin }) {
       <div className="mb-6 flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm sm:flex-row">
         <div className="h-36 w-full overflow-hidden rounded-xl bg-[#F1F3F5] sm:w-48">
           {machine.foto_url ? (
-          <img src={machine.foto_url} alt={`${machine.marca} ${machine.modelo}`} className="h-full w-full object-contain" />
+            <img src={machine.foto_url} alt={`${machine.marca} ${machine.modelo}`} className="h-full w-full object-contain" />
           ) : (
             <div className="flex h-full items-center justify-center">
               <Tractor size={40} className="text-gray-400" />
@@ -143,10 +183,10 @@ export default function MachineDetailClient({ id, isAdmin }) {
             <div key={t.id} className="relative rounded-xl bg-white p-5 shadow-sm">
               {isAdmin && (
                 <button
-                  onClick={() => setToDelete(t)}
-                  className="absolute right-4 top-4 rounded-full p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                  onClick={() => openEdit(t)}
+                  className="absolute right-4 top-4 rounded-full p-1.5 text-gray-800 hover:bg-gray-100"
                 >
-                  <Trash2 size={15} />
+                  <Pencil size={15} />
                 </button>
               )}
 
@@ -214,29 +254,113 @@ export default function MachineDetailClient({ id, isAdmin }) {
         </div>
       )}
 
-      {toDelete && (
+      {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg">
-            <h3 className="mb-2 text-base font-bold text-gray-900">¿Eliminar este mantenimiento?</h3>
-            <p className="mb-4 text-sm text-gray-500">
-              Vas a eliminar el registro <span className="font-medium text-gray-800">{toDelete.tipo}</span> del {toDelete.fecha}.
-              Esta acción no se puede deshacer.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setToDelete(null)}
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmDelete}
-                disabled={deleting}
-                className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                {deleting ? "Eliminando..." : "Sí, eliminar"}
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-lg">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">Editar mantenimiento</h3>
+              <button onClick={closeEdit} className="text-gray-400 hover:text-gray-700">
+                <X size={18} />
               </button>
             </div>
+
+            {!confirmingDelete ? (
+              <>
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Tipo</label>
+                    <select
+                      className={inputCls}
+                      value={editForm.tipo}
+                      onChange={(e) => setEditForm({ ...editForm, tipo: e.target.value })}
+                    >
+                      <option value="Correctivo">Correctivo</option>
+                      <option value="Preventivo">Preventivo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Fecha</label>
+                    <input
+                      type="date"
+                      className={inputCls}
+                      value={editForm.fecha}
+                      onChange={(e) => setEditForm({ ...editForm, fecha: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Responsable</label>
+                    <input
+                      className={inputCls}
+                      value={editForm.responsable}
+                      onChange={(e) => setEditForm({ ...editForm, responsable: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Descripción</label>
+                    <textarea
+                      rows={2}
+                      className={inputCls}
+                      value={editForm.descripcion}
+                      onChange={(e) => setEditForm({ ...editForm, descripcion: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Repuestos</label>
+                    <input
+                      className={inputCls}
+                      value={editForm.repuestos}
+                      onChange={(e) => setEditForm({ ...editForm, repuestos: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Observaciones</label>
+                    <textarea
+                      rows={2}
+                      className={inputCls}
+                      value={editForm.observaciones}
+                      onChange={(e) => setEditForm({ ...editForm, observaciones: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-5 flex gap-2">
+                  <button
+                    onClick={saveEdit}
+                    disabled={saving}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#157347] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    <Save size={14} /> {saving ? "Guardando..." : "Guardar cambios"}
+                  </button>
+                </div>
+                <button
+                  onClick={() => setConfirmingDelete(true)}
+                  className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 size={14} /> Eliminar mantenimiento
+                </button>
+              </>
+            ) : (
+              <div>
+                <p className="mb-4 text-sm text-gray-600">
+                  ¿Seguro que querés eliminar este mantenimiento? Esta acción no se puede deshacer.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setConfirmingDelete(false)}
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    disabled={deleting}
+                    className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    {deleting ? "Eliminando..." : "Sí, eliminar"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
