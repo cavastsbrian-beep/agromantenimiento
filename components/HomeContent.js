@@ -97,7 +97,7 @@ export default function HomeContent() {
                 <Link href={`/m/${m.id}`} className="block text-left">
                   <div className="mb-3 h-28 overflow-hidden rounded-lg bg-[#F1F3F5]">
                     {m.foto_url ? (
-                      <img src={m.foto_url} alt={`${m.marca} ${m.modelo}`} className="h-full w-full object-cover" />
+                      <img src={m.foto_url} alt={`${m.marca} ${m.modelo}`} className="h-full w-full object-contain" />
                     ) : (
                       <div className="flex h-full items-center justify-center">
                         <Tractor size={30} className="text-gray-400" />
