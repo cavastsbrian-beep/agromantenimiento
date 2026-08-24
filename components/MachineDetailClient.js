@@ -99,7 +99,7 @@ export default function MachineDetailClient({ id, isAdmin }) {
       <div className="mb-6 flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm sm:flex-row">
         <div className="h-36 w-full overflow-hidden rounded-xl bg-[#F1F3F5] sm:w-48">
           {machine.foto_url ? (
-            <img src={machine.foto_url} alt={`${machine.marca} ${machine.modelo}`} className="h-full w-full object-cover" />
+          <img src={machine.foto_url} alt={`${machine.marca} ${machine.modelo}`} className="h-full w-full object-contain" />
           ) : (
             <div className="flex h-full items-center justify-center">
               <Tractor size={40} className="text-gray-400" />
