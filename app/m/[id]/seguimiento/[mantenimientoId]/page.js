@@ -9,6 +9,7 @@ export default function SeguimientoHistorialPage() {
   const { mantenimientoId } = useParams();
   const router = useRouter();
   const [mantenimiento, setMantenimiento] = useState(null);
+  const [machine, setMachine] = useState(null);
   const [seguimientos, setSeguimientos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ operario: "", horas: "", fecha: new Date().toISOString().slice(0, 10) });
@@ -27,12 +28,45 @@ export default function SeguimientoHistorialPage() {
       .order("fecha", { ascending: false });
     setMantenimiento(m);
     setSeguimientos(s || []);
+
+    if (m?.maquina_id) {
+      const { data: maq } = await supabase
+        .from("maquinas")
+        .select("*")
+        .eq("id", m.maquina_id)
+        .single();
+      setMachine(maq);
+    }
+
     setLoading(false);
   };
 
   useEffect(() => {
     load();
   }, [mantenimientoId]);
+
+  const checkAndSendAlert = async (totalHoras, mant, maq) => {
+    if (!mant?.proximo_mantenimiento_horas) return;
+    if (mant.aviso_enviado) return;
+    const restante = mant.proximo_mantenimiento_horas - totalHoras;
+    if (restante > 20) return;
+
+    const nombreMaquina = maq ? `${maq.marca} ${maq.modelo}` : "una máquina";
+    const cliente = maq?.cliente ? ` (cliente: ${maq.cliente})` : "";
+    const telefono = maq?.telefono ? ` — Tel: ${maq.telefono}` : "";
+    const mensaje = `⚠️ Mantenimiento próximo: ${nombreMaquina}${cliente}${telefono}. Horas actuales: ${totalHoras}. Próximo mantenimiento a las ${mant.proximo_mantenimiento_horas} hs (quedan ${Math.max(restante, 0)} hs).`;
+
+    try {
+      await fetch("/api/send-alert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: mensaje }),
+      });
+      await supabase.from("mantenimientos").update({ aviso_enviado: true }).eq("id", mant.id);
+    } catch (e) {
+      // si falla el aviso, no bloqueamos el guardado del seguimiento
+    }
+  };
 
   const submitSeguimiento = async () => {
     if (!formData.operario || !formData.horas || !formData.fecha) return;
@@ -48,6 +82,16 @@ export default function SeguimientoHistorialPage() {
       alert("No se pudo guardar: " + error.message);
       return;
     }
+
+    const { data: nuevaLista } = await supabase
+      .from("seguimientos")
+      .select("*")
+      .eq("mantenimiento_id", mantenimientoId)
+      .order("fecha", { ascending: false });
+
+    const nuevoTotal = (nuevaLista || []).reduce((sum, item) => sum + (Number(item.horas) || 0), 0);
+    await checkAndSendAlert(nuevoTotal, mantenimiento, machine);
+
     setFormData({ operario: "", horas: "", fecha: new Date().toISOString().slice(0, 10) });
     load();
   };
@@ -77,6 +121,11 @@ export default function SeguimientoHistorialPage() {
         <p className="mt-3 flex items-center gap-1 text-sm font-semibold text-[#157347]">
           <Clock size={15} /> Horas de trabajo: {totalHoras}
         </p>
+        {mantenimiento?.proximo_mantenimiento_horas != null && (
+          <p className="mt-1 text-xs text-gray-500">
+            Próximo mantenimiento a las {mantenimiento.proximo_mantenimiento_horas} hs
+          </p>
+        )}
       </div>
 
       <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
