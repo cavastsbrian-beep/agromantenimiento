@@ -151,6 +151,9 @@ export default function MachineDetailClient({ id, isAdmin }) {
             <div>
               <h1 className="text-xl font-bold">{machine.marca} {machine.modelo}</h1>
               <p className="text-sm text-gray-500">{machine.tipo} · Año {machine.anio || "—"}</p>
+            {machine.telefono && (
+              <p className="mt-1 text-sm text-gray-500">📞 {machine.telefono}</p>
+            )}
             </div>
             {qrSrc && (
               <div className="flex flex-col items-center gap-1 rounded-lg bg-[#F1F3F5] p-2">
