@@ -171,6 +171,19 @@ export default function MachineDetailClient({ id, isAdmin }) {
         </div>
       </div>
 
+      {records.length > 0 && records[0].proximo_mantenimiento_horas != null && (
+        <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl bg-white p-6 shadow-sm">
+          <div>
+            <div className="text-xs text-gray-400">Próximo mantenimiento</div>
+            <div className="text-lg font-bold text-[#157347]">{records[0].proximo_mantenimiento_horas} hs</div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-400">Horas actuales</div>
+            <div className="text-lg font-bold text-gray-800">{totalHoras(records[0].id)} hs</div>
+          </div>
+        </div>
+      )}
+
       <h2 className="mb-3 text-lg font-bold">Historial cronológico</h2>
 
       {records.length === 0 ? (
