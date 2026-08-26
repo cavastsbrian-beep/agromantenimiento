@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 const empty = {
   cliente: "", tipo: "", tipoOtro: "", marca: "", modelo: "", anio: "",
-  numero_serie: "", observaciones: "",
+  numero_serie: "", telefono: "", observaciones: "",
 };
 
 export default function AddMachinePage() {
@@ -76,6 +76,7 @@ export default function AddMachinePage() {
       modelo: form.modelo,
       anio: form.anio ? Number(form.anio) : null,
       numero_serie: form.numero_serie,
+      telefono: form.telefono,
       observaciones: form.observaciones,
       foto_url: fotoUrl,
     });
@@ -98,6 +99,16 @@ export default function AddMachinePage() {
         <div className="grid gap-x-6 sm:grid-cols-2">
           <Field label="Cliente propietario" required>
             <input className={inputCls} value={form.cliente} onChange={set("cliente")} />
+          </Field>
+
+          <Field label="Teléfono (WhatsApp del cliente)">
+            <input
+              type="tel"
+              className={inputCls}
+              value={form.telefono}
+              onChange={set("telefono")}
+              placeholder="Ej: 5493562123456"
+            />
           </Field>
 
           <Field label="Tipo de maquinaria" required>
