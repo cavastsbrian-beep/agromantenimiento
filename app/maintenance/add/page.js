@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 const empty = {
   machineId: "", fecha: "", responsable: "", tipo: "Preventivo",
-  horas: "", descripcion: "", repuestos: "", observaciones: "",
+  horas: "", proximoHoras: "", descripcion: "", repuestos: "", observaciones: "",
 };
 
 export default function AddMaintenancePage() {
@@ -45,18 +45,21 @@ export default function AddMaintenancePage() {
 
   const handleSave = async () => {
     setError("");
+
     if (!form.machineId || !form.fecha || !form.responsable) {
       setError("Completá los campos obligatorios.");
       return;
     }
-    setSaving(true);
 
+    setSaving(true);
     let excelUrl = null;
+
     if (file) {
       const path = `${form.machineId}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("planillas-excel")
         .upload(path, file);
+
       if (uploadError) {
         setSaving(false);
         setError("No se pudo subir el archivo Excel. Probá de nuevo.");
@@ -67,6 +70,7 @@ export default function AddMaintenancePage() {
     }
 
     const horasNum = form.horas ? Number(form.horas) : null;
+    const proximoHorasNum = form.proximoHoras ? Number(form.proximoHoras) : null;
 
     const { error: dbError } = await supabase.from("mantenimientos").insert({
       maquina_id: form.machineId,
@@ -74,6 +78,8 @@ export default function AddMaintenancePage() {
       responsable: form.responsable,
       tipo: form.tipo,
       horas: horasNum,
+      proximo_mantenimiento_horas: proximoHorasNum,
+      aviso_enviado: false,
       descripcion: form.descripcion,
       repuestos: form.repuestos || "-",
       observaciones: form.observaciones,
@@ -92,6 +98,7 @@ export default function AddMaintenancePage() {
         .select("horas")
         .eq("id", form.machineId)
         .single();
+
       if (machine && horasNum > machine.horas) {
         await supabase.from("maquinas").update({ horas: horasNum }).eq("id", form.machineId);
       }
@@ -125,24 +132,37 @@ export default function AddMaintenancePage() {
           <Field label="Fecha" required>
             <input type="date" className={inputCls} value={form.fecha} onChange={set("fecha")} />
           </Field>
+
           <Field label="Responsable" required>
             <input className={inputCls} value={form.responsable} onChange={set("responsable")} />
           </Field>
+
           <Field label="Tipo de mantenimiento" required>
             <select className={inputCls} value={form.tipo} onChange={set("tipo")}>
               <option>Preventivo</option>
               <option>Correctivo</option>
             </select>
           </Field>
-          
+
+          <Field label="Horas para el próximo mantenimiento">
+            <input
+              type="number"
+              className={inputCls}
+              value={form.proximoHoras}
+              onChange={set("proximoHoras")}
+              placeholder="Ej: 1000"
+            />
+          </Field>
         </div>
 
         <Field label="Descripción">
           <textarea rows={3} className={inputCls} value={form.descripcion} onChange={set("descripcion")} />
         </Field>
+
         <Field label="Repuestos utilizados">
           <input className={inputCls} value={form.repuestos} onChange={set("repuestos")} />
         </Field>
+
         <Field label="Observaciones">
           <textarea rows={2} className={inputCls} value={form.observaciones} onChange={set("observaciones")} />
         </Field>
@@ -199,9 +219,6 @@ export default function AddMaintenancePage() {
     </main>
   );
 }
-
-const inputCls =
-  "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#157347] focus:ring-2 focus:ring-[#157347]/20";
 
 function Field({ label, children, required }) {
   return (
