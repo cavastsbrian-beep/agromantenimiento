@@ -2,21 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, FileSpreadsheet, X } from "lucide-react";
+import { Check, FileSpreadsheet, FileText, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 const empty = {
   machineId: "", fecha: "", responsable: "", tipo: "Preventivo",
-  horas: "", proximoHoras: "", descripcion: "", repuestos: "", observaciones: "",
+  horas: "", proximoHoras: "", precioTotal: "", descripcion: "", repuestos: "", observaciones: "",
 };
 
 export default function AddMaintenancePage() {
   const [machines, setMachines] = useState([]);
   const [form, setForm] = useState(empty);
   const [file, setFile] = useState(null);
+  const [facturaFile, setFacturaFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
+  const facturaInputRef = useRef(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -43,6 +45,17 @@ export default function AddMaintenancePage() {
     setFile(f);
   };
 
+  const handleFacturaFile = (fileList) => {
+    const f = fileList?.[0];
+    if (!f) return;
+    if (!/\.(pdf|doc|docx)$/i.test(f.name)) {
+      setError("La factura debe ser un archivo PDF o Word (.pdf, .doc, .docx).");
+      return;
+    }
+    setError("");
+    setFacturaFile(f);
+  };
+
   const handleSave = async () => {
     setError("");
 
@@ -53,6 +66,7 @@ export default function AddMaintenancePage() {
 
     setSaving(true);
     let excelUrl = null;
+    let facturaUrl = null;
 
     if (file) {
       const path = `${form.machineId}/${Date.now()}-${file.name}`;
@@ -69,8 +83,24 @@ export default function AddMaintenancePage() {
       excelUrl = pub.publicUrl;
     }
 
+    if (facturaFile) {
+      const path = `facturas/${form.machineId}/${Date.now()}-${facturaFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("planillas-excel")
+        .upload(path, facturaFile);
+
+      if (uploadError) {
+        setSaving(false);
+        setError("No se pudo subir la factura. Probá de nuevo.");
+        return;
+      }
+      const { data: pub } = supabase.storage.from("planillas-excel").getPublicUrl(path);
+      facturaUrl = pub.publicUrl;
+    }
+
     const horasNum = form.horas ? Number(form.horas) : null;
     const proximoHorasNum = form.proximoHoras ? Number(form.proximoHoras) : null;
+    const precioNum = form.precioTotal ? Number(form.precioTotal) : null;
 
     const { error: dbError } = await supabase.from("mantenimientos").insert({
       maquina_id: form.machineId,
@@ -80,6 +110,8 @@ export default function AddMaintenancePage() {
       horas: horasNum,
       proximo_mantenimiento_horas: proximoHorasNum,
       aviso_enviado: false,
+      precio_total: precioNum,
+      factura_url: facturaUrl,
       descripcion: form.descripcion,
       repuestos: form.repuestos || "-",
       observaciones: form.observaciones,
@@ -167,6 +199,16 @@ export default function AddMaintenancePage() {
           <textarea rows={2} className={inputCls} value={form.observaciones} onChange={set("observaciones")} />
         </Field>
 
+        <Field label="Precio total">
+          <input
+            type="number"
+            className={inputCls}
+            value={form.precioTotal}
+            onChange={set("precioTotal")}
+            placeholder="Ej: 150000"
+          />
+        </Field>
+
         <Field label="Adjuntar planilla Excel">
           {file ? (
             <div className="flex items-center justify-between rounded-lg border border-gray-300 bg-[#F1F3F5] px-4 py-3 text-sm">
@@ -199,6 +241,43 @@ export default function AddMaintenancePage() {
                 accept=".xlsx,.xls"
                 style={{ position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden" }}
                 onChange={(e) => handleFile(e.target.files)}
+              />
+            </div>
+          )}
+        </Field>
+
+        <Field label="Adjuntar factura">
+          {facturaFile ? (
+            <div className="flex items-center justify-between rounded-lg border border-gray-300 bg-[#F1F3F5] px-4 py-3 text-sm">
+              <span className="flex items-center gap-2 text-gray-700">
+                <FileText size={18} className="text-[#198754]" />
+                {facturaFile.name}
+                <span className="text-xs text-gray-400">({(facturaFile.size / 1024).toFixed(0)} KB)</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setFacturaFile(null)}
+                className="rounded-md p-1 text-gray-400 hover:bg-white hover:text-red-500"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-gray-300 px-4 py-4 transition hover:border-[#157347] hover:bg-green-50/40">
+              <button
+                type="button"
+                onClick={() => facturaInputRef.current?.click()}
+                className="flex w-full items-center gap-3 text-sm text-gray-500"
+              >
+                <FileText size={18} />
+                Hacé clic para seleccionar un archivo .pdf, .doc o .docx
+              </button>
+              <input
+                ref={facturaInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx"
+                style={{ position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden" }}
+                onChange={(e) => handleFacturaFile(e.target.files)}
               />
             </div>
           )}
