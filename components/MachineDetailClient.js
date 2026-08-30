@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Tractor, ArrowLeft, QrCode, User, ClipboardList, Gauge,
-  Calendar, FileSpreadsheet, Download, ChevronRight, Clock, Pencil, Trash2, Save, X,
+  Calendar, FileSpreadsheet, Download, ChevronRight, Clock, Pencil, Trash2, Save, X, FileText,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -153,7 +153,15 @@ export default function MachineDetailClient({ id, isAdmin }) {
               <p className="text-sm text-gray-500">{machine.tipo} · Año {machine.anio || "—"}</p>
             {machine.telefono && (
               <p className="mt-1 text-sm text-gray-500">📞 {machine.telefono}</p>
+            {machine.telefono && (
+              <p className="mt-1 text-sm text-gray-500">📞 {machine.telefono}</p>
             )}
+            <button
+              onClick={() => router.push(`/m/${id}/facturas`)}
+              className="mt-2 flex items-center gap-1.5 text-sm font-medium text-[#157347] hover:underline"
+            >
+              <FileText size={14} /> Historial de facturación
+            </button>
             </div>
             {qrSrc && (
               <div className="flex flex-col items-center gap-1 rounded-lg bg-[#F1F3F5] p-2">
@@ -173,6 +181,23 @@ export default function MachineDetailClient({ id, isAdmin }) {
           )}
         </div>
       </div>
+
+      {records.length > 0 && (
+        <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl bg-white p-6 shadow-sm">
+          <div>
+            <div className="text-xs text-gray-400">Mantenimiento correctivo</div>
+            <div className="text-lg font-bold text-[#FD7E14]">
+              ${records.filter((r) => r.tipo === "Correctivo").reduce((s, r) => s + (Number(r.precio_total) || 0), 0)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-400">Mantenimiento preventivo</div>
+            <div className="text-lg font-bold text-[#198754]">
+              ${records.filter((r) => r.tipo === "Preventivo").reduce((s, r) => s + (Number(r.precio_total) || 0), 0)}
+            </div>
+          </div>
+        </div>
+      )}
 
       {records.length > 0 && records[0].proximo_mantenimiento_horas != null && (
         <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl bg-white p-6 shadow-sm">
