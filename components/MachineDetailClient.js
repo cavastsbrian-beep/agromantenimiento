@@ -151,17 +151,9 @@ export default function MachineDetailClient({ id, isAdmin }) {
             <div>
               <h1 className="text-xl font-bold">{machine.marca} {machine.modelo}</h1>
               <p className="text-sm text-gray-500">{machine.tipo} · Año {machine.anio || "—"}</p>
-            {machine.telefono && (
-              <p className="mt-1 text-sm text-gray-500">📞 {machine.telefono}</p>
-            {machine.telefono && (
-              <p className="mt-1 text-sm text-gray-500">📞 {machine.telefono}</p>
-            )}
-            <button
-              onClick={() => router.push(`/m/${id}/facturas`)}
-              className="mt-2 flex items-center gap-1.5 text-sm font-medium text-[#157347] hover:underline"
-            >
-              <FileText size={14} /> Historial de facturación
-            </button>
+              {machine.telefono && (
+                <p className="mt-1 text-sm text-gray-500">📞 {machine.telefono}</p>
+              )}
             </div>
             {qrSrc && (
               <div className="flex flex-col items-center gap-1 rounded-lg bg-[#F1F3F5] p-2">
@@ -181,6 +173,13 @@ export default function MachineDetailClient({ id, isAdmin }) {
           )}
         </div>
       </div>
+
+      <button
+        onClick={() => router.push(`/m/${id}/facturas`)}
+        className="mb-6 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-white p-4 text-sm font-semibold text-[#157347] shadow-sm hover:bg-gray-50"
+      >
+        <FileText size={16} /> Historial de facturación
+      </button>
 
       {records.length > 0 && (
         <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl bg-white p-6 shadow-sm">
