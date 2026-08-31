@@ -245,6 +245,11 @@ export default function MachineDetailClient({ id, isAdmin }) {
                 <p className="mt-1 text-sm text-gray-500">Repuestos: {t.repuestos}</p>
               )}
               {t.observaciones && <p className="mt-1 text-sm text-gray-500">Obs.: {t.observaciones}</p>}
+              {t.precio_total != null && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Monto: <span className="font-semibold text-gray-800">${t.precio_total}</span>
+                </p>
+              )}
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {t.excel_url && (
@@ -259,6 +264,29 @@ export default function MachineDetailClient({ id, isAdmin }) {
                     </a>
                     <a
                       href={t.excel_url}
+                      download
+                      className="flex items-center gap-1.5 rounded-lg bg-[#157347] px-3 py-1.5 text-xs font-medium text-white"
+                    >
+                      <Download size={13} /> Descargar
+                    </a>
+                  </>
+                )}
+                {t.factura_url && (
+                  <>
+                    <a
+                      href={
+                        /\.pdf($|\?)/i.test(t.factura_url)
+                          ? t.factura_url
+                          : `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(t.factura_url)}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      <FileText size={13} /> Ver factura
+                    </a>
+                    <a
+                      href={t.factura_url}
                       download
                       className="flex items-center gap-1.5 rounded-lg bg-[#157347] px-3 py-1.5 text-xs font-medium text-white"
                     >
