@@ -92,10 +92,16 @@ export default function FacturasPage() {
                       {f.tipo}
                     </span>
                   </div>
-                  {f.precio_total != null && (
+{f.precio_total != null && (
                     <div className="mt-1 text-sm text-gray-500">
                       Monto: <span className="font-semibold text-gray-800">${f.precio_total}</span>
                     </div>
+                  )}
+                  <p className="mt-1 text-sm text-gray-500">
+                    Responsable: <span className="font-medium text-gray-700">{f.responsable}</span>
+                  </p>
+                  {f.observaciones && (
+                    <p className="mt-1 text-sm text-gray-500">Obs.: {f.observaciones}</p>
                   )}
                 </div>
                 <div className="flex gap-2">
