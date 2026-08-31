@@ -10,19 +10,33 @@ export default function FacturasPage() {
   const router = useRouter();
   const [machine, setMachine] = useState(null);
   const [facturas, setFacturas] = useState([]);
+  const [totalCorrectivo, setTotalCorrectivo] = useState(0);
+  const [totalPreventivo, setTotalPreventivo] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       const { data: m } = await supabase.from("maquinas").select("*").eq("id", id).single();
-      const { data: r } = await supabase
+      const { data: todos } = await supabase
         .from("mantenimientos")
         .select("*")
-        .eq("maquina_id", id)
-        .not("factura_url", "is", null)
-        .order("fecha", { ascending: false });
+        .eq("maquina_id", id);
+
+      const correctivo = (todos || [])
+        .filter((r) => r.tipo === "Correctivo")
+        .reduce((s, r) => s + (Number(r.precio_total) || 0), 0);
+      const preventivo = (todos || [])
+        .filter((r) => r.tipo === "Preventivo")
+        .reduce((s, r) => s + (Number(r.precio_total) || 0), 0);
+
+      const conFactura = (todos || [])
+        .filter((r) => r.factura_url)
+        .sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+
       setMachine(m);
-      setFacturas(r || []);
+      setFacturas(conFactura);
+      setTotalCorrectivo(correctivo);
+      setTotalPreventivo(preventivo);
       setLoading(false);
     };
     load();
@@ -47,6 +61,17 @@ export default function FacturasPage() {
       {machine && (
         <p className="mb-6 text-sm text-gray-500">{machine.marca} {machine.modelo} — {machine.cliente}</p>
       )}
+
+      <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl bg-white p-6 shadow-sm">
+        <div>
+          <div className="text-xs text-gray-400">Mantenimiento correctivo</div>
+          <div className="text-lg font-bold text-[#FD7E14]">${totalCorrectivo}</div>
+        </div>
+        <div>
+          <div className="text-xs text-gray-400">Mantenimiento preventivo</div>
+          <div className="text-lg font-bold text-[#198754]">${totalPreventivo}</div>
+        </div>
+      </div>
 
       {facturas.length === 0 ? (
         <div className="rounded-xl bg-white p-8 text-center text-gray-500 shadow-sm">
