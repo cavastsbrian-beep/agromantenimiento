@@ -180,23 +180,7 @@ export default function MachineDetailClient({ id, isAdmin }) {
       >
         <FileText size={16} /> Historial de facturación
       </button>
-
-      {records.length > 0 && (
-        <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl bg-white p-6 shadow-sm">
-          <div>
-            <div className="text-xs text-gray-400">Mantenimiento correctivo</div>
-            <div className="text-lg font-bold text-[#FD7E14]">
-              ${records.filter((r) => r.tipo === "Correctivo").reduce((s, r) => s + (Number(r.precio_total) || 0), 0)}
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-400">Mantenimiento preventivo</div>
-            <div className="text-lg font-bold text-[#198754]">
-              ${records.filter((r) => r.tipo === "Preventivo").reduce((s, r) => s + (Number(r.precio_total) || 0), 0)}
-            </div>
-          </div>
-        </div>
-      )}
+    
 
       {records.length > 0 && records[0].proximo_mantenimiento_horas != null && (
         <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl bg-white p-6 shadow-sm">
