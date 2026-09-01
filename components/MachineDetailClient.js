@@ -180,7 +180,6 @@ export default function MachineDetailClient({ id, isAdmin }) {
       >
         <FileText size={16} /> Historial de facturación
       </button>
-    
 
       {records.length > 0 && records[0].proximo_mantenimiento_horas != null && (
         <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl bg-white p-6 shadow-sm">
@@ -204,103 +203,112 @@ export default function MachineDetailClient({ id, isAdmin }) {
       ) : (
         <div className="space-y-4">
           {records.map((t) => (
-            <div key={t.id} className="relative rounded-xl bg-white p-5 shadow-sm">
-              {isAdmin && (
-                <button
-                  onClick={() => openEdit(t)}
-                  className="absolute right-4 top-4 rounded-full p-1.5 text-gray-800 hover:bg-gray-100"
-                >
-                  <Pencil size={15} />
-                </button>
-              )}
+            <div key={t.id} className="rounded-xl bg-white p-5 shadow-sm">
+              <div className="flex gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+                        style={{ backgroundColor: t.tipo === "Preventivo" ? "#198754" : "#FD7E14" }}
+                      >
+                        {t.tipo}
+                      </span>
+                      <span className="flex items-center gap-1 text-sm text-gray-500">
+                        <Calendar size={14} /> {t.fecha}
+                      </span>
+                      <span className="flex items-center gap-1 text-sm font-medium text-[#157347]">
+                        <Clock size={14} /> Horas de trabajo: {totalHoras(t.id)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {t.horas != null && (
+                        <span className="flex items-center gap-1 text-sm text-gray-500">
+                          <Gauge size={14} /> {t.horas} hs
+                        </span>
+                      )}
+                      {isAdmin && (
+                        <button
+                          onClick={() => openEdit(t)}
+                          className="rounded-full p-1.5 text-gray-800 hover:bg-gray-100"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-              <div className={`flex flex-wrap items-center justify-between gap-2 ${isAdmin ? "pr-8" : ""}`}>
-                <div className="flex items-center gap-3">
-                  <span
-                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-                    style={{ backgroundColor: t.tipo === "Preventivo" ? "#198754" : "#FD7E14" }}
-                  >
-                    {t.tipo}
-                  </span>
-                  <span className="flex items-center gap-1 text-sm text-gray-500">
-                    <Calendar size={14} /> {t.fecha}
-                  </span>
-                  <span className="flex items-center gap-1 text-sm font-medium text-[#157347]">
-                    <Clock size={14} /> Horas de trabajo: {totalHoras(t.id)}
-                  </span>
+                  <p className="mt-3 flex items-center gap-1 text-sm text-gray-500">
+                    <User size={14} /> Responsable:{" "}
+                    <span className="font-medium text-gray-700">{t.responsable}</span>
+                  </p>
+                  {t.descripcion && <p className="mt-2 text-sm text-gray-700">{t.descripcion}</p>}
+                  {t.repuestos && t.repuestos !== "-" && (
+                    <p className="mt-1 text-sm text-gray-500">Repuestos: {t.repuestos}</p>
+                  )}
+                  {t.observaciones && <p className="mt-1 text-sm text-gray-500">Obs.: {t.observaciones}</p>}
+                  {t.precio_total != null && (
+                    <p className="mt-1 text-sm text-gray-500">
+                      Monto: <span className="font-semibold text-gray-800">${t.precio_total}</span>
+                    </p>
+                  )}
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {t.excel_url && (
+                      <>
+                        <a
+                          href={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(t.excel_url)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          <FileSpreadsheet size={13} /> Ver planilla
+                        </a>
+                        <a
+                          href={t.excel_url}
+                          download
+                          className="flex items-center gap-1.5 rounded-lg bg-[#157347] px-3 py-1.5 text-xs font-medium text-white"
+                        >
+                          <Download size={13} /> Descargar
+                        </a>
+                      </>
+                    )}
+                  </div>
+
+                  {t.factura_url && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <a
+                        href={
+                          /\.pdf($|\?)/i.test(t.factura_url)
+                            ? t.factura_url
+                            : `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(t.factura_url)}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        <FileText size={13} /> Ver factura
+                      </a>
+                      <a
+                        href={t.factura_url}
+                        download
+                        className="flex items-center gap-1.5 rounded-lg bg-[#157347] px-3 py-1.5 text-xs font-medium text-white"
+                      >
+                        <Download size={13} /> Descargar
+                      </a>
+                    </div>
+                  )}
                 </div>
-                {t.horas != null && (
-                  <span className="flex items-center gap-1 text-sm text-gray-500">
-                    <Gauge size={14} /> {t.horas} hs
-                  </span>
-                )}
-              </div>
 
-              <p className="mt-3 flex items-center gap-1 text-sm text-gray-500">
-                <User size={14} /> Responsable:{" "}
-                <span className="font-medium text-gray-700">{t.responsable}</span>
-              </p>
-              {t.descripcion && <p className="mt-2 text-sm text-gray-700">{t.descripcion}</p>}
-              {t.repuestos && t.repuestos !== "-" && (
-                <p className="mt-1 text-sm text-gray-500">Repuestos: {t.repuestos}</p>
-              )}
-              {t.observaciones && <p className="mt-1 text-sm text-gray-500">Obs.: {t.observaciones}</p>}
-              {t.precio_total != null && (
-                <p className="mt-1 text-sm text-gray-500">
-                  Monto: <span className="font-semibold text-gray-800">${t.precio_total}</span>
-                </p>
-              )}
-               <div className="mt-3 flex flex-wrap gap-2">
-                {t.excel_url && (
-                  <>
-                    <a
-                      href={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(t.excel_url)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      <FileSpreadsheet size={13} /> Ver planilla
-                    </a>
-                    <a
-                      href={t.excel_url}
-                      download
-                      className="flex items-center gap-1.5 rounded-lg bg-[#157347] px-3 py-1.5 text-xs font-medium text-white"
-                    >
-                      <Download size={13} /> Descargar
-                    </a>
-                  </>
-                )}
                 <button
                   onClick={() => router.push(`/m/${id}/seguimiento/${t.id}`)}
-                  className="flex items-center gap-1.5 rounded-lg border border-[#157347] px-3 py-1.5 text-xs font-medium text-[#157347] hover:bg-green-50"
+                  className="flex w-24 flex-shrink-0 flex-col items-center justify-center gap-2 self-stretch rounded-lg border border-[#157347] px-2 py-3 text-xs font-semibold text-[#157347] hover:bg-green-50"
                 >
-                  <ChevronRight size={13} /> Seguimiento
+                  <ChevronRight size={16} />
+                  <span>Seguimiento</span>
+                  <span className="text-2xl">🚜</span>
                 </button>
               </div>
-
-              {t.factura_url && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <a
-                    href={
-                      /\.pdf($|\?)/i.test(t.factura_url)
-                        ? t.factura_url
-                        : `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(t.factura_url)}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    <FileText size={13} /> Ver factura
-                  </a>
-                  <a
-                    href={t.factura_url}
-                    download
-                    className="flex items-center gap-1.5 rounded-lg bg-[#157347] px-3 py-1.5 text-xs font-medium text-white"
-                  >
-                    <Download size={13} /> Descargar
-                  </a>
-                </div>
-              )}
             </div>
           ))}
         </div>
