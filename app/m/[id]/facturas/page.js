@@ -25,10 +25,13 @@ export default function FacturasPage() {
 
       const registros = todos || [];
 
-      const correctivo = registros
+      const anioActual = String(new Date().getFullYear());
+      const registrosDelAnio = registros.filter((r) => r.fecha && r.fecha.slice(0, 4) === anioActual);
+
+      const correctivo = registrosDelAnio
         .filter((r) => r.tipo === "Correctivo")
         .reduce((s, r) => s + (Number(r.precio_total) || 0), 0);
-      const preventivo = registros
+      const preventivo = registrosDelAnio
         .filter((r) => r.tipo === "Preventivo")
         .reduce((s, r) => s + (Number(r.precio_total) || 0), 0);
 
