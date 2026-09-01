@@ -9,7 +9,7 @@ export default function FacturasPage() {
   const { id } = useParams();
   const router = useRouter();
   const [machine, setMachine] = useState(null);
-  const [facturas, setFacturas] = useState([]);
+  const [years, setYears] = useState([]);
   const [totalCorrectivo, setTotalCorrectivo] = useState(0);
   const [totalPreventivo, setTotalPreventivo] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -20,21 +20,42 @@ export default function FacturasPage() {
       const { data: todos } = await supabase
         .from("mantenimientos")
         .select("*")
-        .eq("maquina_id", id);
+        .eq("maquina_id", id)
+        .order("fecha", { ascending: false });
 
-      const correctivo = (todos || [])
+      const registros = todos || [];
+
+      const correctivo = registros
         .filter((r) => r.tipo === "Correctivo")
         .reduce((s, r) => s + (Number(r.precio_total) || 0), 0);
-      const preventivo = (todos || [])
+      const preventivo = registros
         .filter((r) => r.tipo === "Preventivo")
         .reduce((s, r) => s + (Number(r.precio_total) || 0), 0);
 
-      const conFactura = (todos || [])
-        .filter((r) => r.factura_url)
-        .sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+      const porAnio = {};
+      registros.forEach((r) => {
+        const anio = r.fecha ? r.fecha.slice(0, 4) : "Sin fecha";
+        if (!porAnio[anio]) porAnio[anio] = [];
+        porAnio[anio].push(r);
+      });
+
+      const gruposOrdenados = Object.keys(porAnio)
+        .sort((a, b) => b.localeCompare(a))
+        .map((anio) => {
+          const items = porAnio[anio];
+          const totalAnio = items.reduce((s, r) => s + (Number(r.precio_total) || 0), 0);
+          const correctivoAnio = items
+            .filter((r) => r.tipo === "Correctivo")
+            .reduce((s, r) => s + (Number(r.precio_total) || 0), 0);
+          const preventivoAnio = items
+            .filter((r) => r.tipo === "Preventivo")
+            .reduce((s, r) => s + (Number(r.precio_total) || 0), 0);
+          const conFactura = items.filter((r) => r.factura_url);
+          return { anio, totalAnio, correctivoAnio, preventivoAnio, conFactura };
+        });
 
       setMachine(m);
-      setFacturas(conFactura);
+      setYears(gruposOrdenados);
       setTotalCorrectivo(correctivo);
       setTotalPreventivo(preventivo);
       setLoading(false);
@@ -73,59 +94,87 @@ export default function FacturasPage() {
         </div>
       </div>
 
-      {facturas.length === 0 ? (
+      {years.length === 0 ? (
         <div className="rounded-xl bg-white p-8 text-center text-gray-500 shadow-sm">
-          Todavía no hay facturas cargadas para esta máquina.
+          Todavía no hay mantenimientos registrados para esta máquina.
         </div>
       ) : (
-        <div className="space-y-3">
-          {facturas.map((f) => (
-            <div key={f.id} className="rounded-xl bg-white p-4 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
-                    <Calendar size={14} className="text-gray-400" /> {f.fecha}
-                    <span
-                      className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
-                      style={{ backgroundColor: f.tipo === "Preventivo" ? "#198754" : "#FD7E14" }}
-                    >
-                      {f.tipo}
-                    </span>
+        <div className="space-y-8">
+          {years.map((grupo) => (
+            <div key={grupo.anio}>
+              <div className="mb-3 rounded-2xl bg-white p-5 shadow-sm">
+                <h2 className="mb-2 text-base font-bold text-gray-800">Balance {grupo.anio}</h2>
+                <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <div className="text-xs text-gray-400">Total gastado</div>
+                    <div className="font-bold text-gray-800">${grupo.totalAnio}</div>
                   </div>
-{f.precio_total != null && (
-                    <div className="mt-1 text-sm text-gray-500">
-                      Monto: <span className="font-semibold text-gray-800">${f.precio_total}</span>
-                    </div>
-                  )}
-                  <p className="mt-1 text-sm text-gray-500">
-                    Responsable: <span className="font-medium text-gray-700">{f.responsable}</span>
-                  </p>
-                  {f.observaciones && (
-                    <p className="mt-1 text-sm text-gray-500">Obs.: {f.observaciones}</p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <a
-                    href={
-                      isPdf(f.factura_url)
-                        ? f.factura_url
-                        : `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.factura_url)}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    <FileText size={13} /> Ver planilla
-                  </a>
-                  <a
-                    href={f.factura_url}
-                    download
-                    className="flex items-center gap-1.5 rounded-lg bg-[#157347] px-3 py-1.5 text-xs font-medium text-white"
-                  >
-                    <Download size={13} /> Descargar
-                  </a>
+                  <div>
+                    <div className="text-xs text-gray-400">Correctivo</div>
+                    <div className="font-bold text-[#FD7E14]">${grupo.correctivoAnio}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400">Preventivo</div>
+                    <div className="font-bold text-[#198754]">${grupo.preventivoAnio}</div>
+                  </div>
                 </div>
               </div>
+
+              {grupo.conFactura.length === 0 ? (
+                <p className="mb-2 pl-1 text-xs text-gray-400">Sin facturas cargadas este año.</p>
+              ) : (
+                <div className="space-y-3">
+                  {grupo.conFactura.map((f) => (
+                    <div key={f.id} className="rounded-xl bg-white p-4 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
+                            <Calendar size={14} className="text-gray-400" /> {f.fecha}
+                            <span
+                              className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+                              style={{ backgroundColor: f.tipo === "Preventivo" ? "#198754" : "#FD7E14" }}
+                            >
+                              {f.tipo}
+                            </span>
+                          </div>
+                          {f.precio_total != null && (
+                            <div className="mt-1 text-sm text-gray-500">
+                              Monto: <span className="font-semibold text-gray-800">${f.precio_total}</span>
+                            </div>
+                          )}
+                          <p className="mt-1 text-sm text-gray-500">
+                            Responsable: <span className="font-medium text-gray-700">{f.responsable}</span>
+                          </p>
+                          {f.observaciones && (
+                            <p className="mt-1 text-sm text-gray-500">Obs.: {f.observaciones}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <a
+                            href={
+                              isPdf(f.factura_url)
+                                ? f.factura_url
+                                : `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.factura_url)}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                          >
+                            <FileText size={13} /> Ver factura
+                          </a>
+                          <a
+                            href={f.factura_url}
+                            download
+                            className="flex items-center gap-1.5 rounded-lg bg-[#157347] px-3 py-1.5 text-xs font-medium text-white"
+                          >
+                            <Download size={13} /> Descargar
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
