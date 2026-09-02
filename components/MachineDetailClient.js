@@ -258,8 +258,7 @@ export default function MachineDetailClient({ id, isAdmin }) {
                   Monto: <span className="font-semibold text-gray-800">${t.precio_total}</span>
                 </p>
               )}
-
-              <div className="mt-3 flex flex-wrap gap-2">
+<div className="mt-3 flex flex-wrap gap-2">
                 {t.excel_url && (
                   <>
                     <a
@@ -279,8 +278,13 @@ export default function MachineDetailClient({ id, isAdmin }) {
                     </a>
                   </>
                 )}
+                <button
+                  onClick={() => router.push(`/m/${id}/seguimiento/${t.id}`)}
+                  className="flex items-center gap-1.5 rounded-lg border border-[#157347] px-3 py-1.5 text-xs font-medium text-[#157347] hover:bg-green-50"
+                >
+                  <ChevronRight size={13} /> Historial de seguimiento
+                </button>
               </div>
-
               {t.factura_url && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   <a
